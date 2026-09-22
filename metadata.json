@@ -1,0 +1,6 @@
+{
+  "name": "The Great Date Glitch",
+  "description": "A two-player, choice-based romantic comedy where an accidental click turns a cozy video date into escalating, hilarious chaos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
