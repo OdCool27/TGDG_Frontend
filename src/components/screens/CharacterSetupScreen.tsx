@@ -139,14 +139,11 @@ export const CharacterSetupScreen: React.FC<CharacterSetupScreenProps> = ({
     };
 
     if (mode === 'create') {
-      await createGame(updateData);
-      onComplete?.();
+      if (await createGame(updateData)) onComplete?.();
     } else if (mode === 'join' && joinCode) {
-      await joinGame(joinCode, updateData);
-      onComplete?.();
+      if (await joinGame(joinCode, updateData)) onComplete?.();
     } else {
-      await saveCharacter(updateData);
-      onComplete?.();
+      if (await saveCharacter(updateData)) onComplete?.();
     }
   };
 

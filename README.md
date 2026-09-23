@@ -6,7 +6,7 @@ Use Node.js 22+. Run `npm ci`, copy `.env.example` to `.env.local` (or update yo
 
 `npm run build` checks TypeScript and builds `dist/`. `npm run preview` serves that build locally. The original missing entrypoint and React/Tailwind dependencies are included; avatars, rooms, pixel art and audio remain in place. Outfit style now has an explicit selector.
 
-For Netlify, select this project as the base directory (`tgdg_frontend` if deploying the parent repository; blank if this directory is the repository). Build command: `npm run build`. Publish directory: `dist`. Set the build environment variable `VITE_API_BASE_URL` to the Render origin, for example `https://your-date-api.onrender.com`, with no `/api/v1` suffix. Redeploy after changing it because Vite embeds these values at build time. See [Netlify environment variables](https://docs.netlify.com/build/environment-variables/overview/). Never place database credentials in VITE variables.
+For Netlify, select this project as the base directory (`tgdg_frontend` if deploying the parent repository; blank if this directory is the repository). Build command: `npm run build`. Publish directory: `dist`. Set the build environment variable `VITE_API_BASE_URL` to `https://tgdgbackend-production.up.railway.app` (or your own backend origin). Do not append `/3001` or `/api/v1`: Railway exposes HTTPS on its public hostname; `3001` is the internal listening port. Local development uses `http://localhost:3001`. The build rejects API URLs containing paths. Redeploy after changing the variable because Vite embeds it at build time. Never place database credentials in VITE variables.
 
 Set the backend's `FRONTEND_ORIGIN` to this site's exact origin. The existing `netlify.toml` serves SPA routes. No project-root config or shared package is required.
 
@@ -17,3 +17,11 @@ The client polls every two seconds, avoids overlapping polls, ignores older stat
 Advance requests include the backend's `phaseId` to protect against delayed duplicate taps. The backend owns all consequences and story state. Keep both copies of the API contract aligned when changing fields; neither independently deployed project imports from the other.
 
 Verification completed: TypeScript/production build and backend-driven two-token HTTP playthroughs for all three endings. For a visual two-device check, create on one browser profile, join on another, submit separately, refresh during the outcome, and make both players acknowledge each recap. The backend README and `test/playthrough-report.json` document the full routes, consequences and estimated 25–35 minute playtime. Deployment/account configuration and a human mobile playtest remain to be done.
+
+## Browser regression checks
+
+Run `npm test` with the frontend and backend running locally on ports 3000 and 3001. The suite uses installed Google Chrome via Playwright, creates one real two-player room, and completes all 15 scenes and three recaps. It checks failed-create form preservation, guest setup readiness, private choices, both-player advancement, refresh and temporary offline recovery. Set `E2E_APP_ORIGIN` and `E2E_API_BASE_URL` to target another environment; use a test environment when possible. Test rooms are subject to normal backend expiry.
+
+To check a production build before deploying, run `npm run build`, set `E2E_USE_DIST=true`, and set `E2E_APP_ORIGIN` to an origin allowed by the backend. Playwright serves local `dist/` files only within its isolated browsers at that origin. API requests still reach the configured backend directly and enforce CORS; this does not publish any files. Ensure the build's `VITE_API_BASE_URL` matches `E2E_API_BASE_URL`.
+
+For the original `Cannot POST /3001/api/v1/sessions` deployment error, correct Netlify's `VITE_API_BASE_URL` as above and rebuild/redeploy. Editing a local env file alone cannot update an already deployed bundle.

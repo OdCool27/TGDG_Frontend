@@ -23,9 +23,9 @@ interface GameContextType {
   currentThemeName: string;
   isMock: boolean;
   simulatedPartner: boolean;
-  createGame: (initialChar?: CharacterUpdateRequest) => Promise<void>;
-  joinGame: (code: string, initialChar?: CharacterUpdateRequest) => Promise<void>;
-  saveCharacter: (char: CharacterUpdateRequest) => Promise<void>;
+  createGame: (initialChar?: CharacterUpdateRequest) => Promise<boolean>;
+  joinGame: (code: string, initialChar?: CharacterUpdateRequest) => Promise<boolean>;
+  saveCharacter: (char: CharacterUpdateRequest) => Promise<boolean>;
   startGame: () => Promise<void>;
   submitChoice: (choiceId: string) => Promise<void>;
   advanceScene: () => Promise<void>;
@@ -235,15 +235,17 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem(LOCAL_ROLE_KEY, 'host');
 
       if (initialChar) {
-        await client.updateCharacter(res.sessionId, res.playerToken, initialChar);
+        applySession(await client.updateCharacter(res.sessionId, res.playerToken, initialChar));
       }
 
       await fetchSession(res.sessionId, res.playerToken);
       sound.playChime();
+      return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create date session';
       setError(msg);
       sound.playGlitch();
+      return false;
     } finally {
       setLoading(false);
     }
@@ -267,22 +269,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem(LOCAL_ROLE_KEY, 'guest');
 
       if (initialChar) {
-        await client.updateCharacter(res.sessionId, res.playerToken, initialChar);
+        applySession(await client.updateCharacter(res.sessionId, res.playerToken, initialChar));
       }
 
       await fetchSession(res.sessionId, res.playerToken);
       sound.playChime();
+      return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to join date session';
       setError(msg);
       sound.playGlitch();
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
   const saveCharacter = async (char: CharacterUpdateRequest) => {
-    if (!sessionId || !playerToken) return;
+    if (!sessionId || !playerToken) return false;
     setLoading(true);
     setError(null);
     try {
@@ -291,9 +295,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await client.updateCharacter(sessionId, playerToken, char);
       applySession(res);
       sound.playChime();
+      return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save character profile';
       setError(msg);
+      return false;
     } finally {
       setLoading(false);
     }
