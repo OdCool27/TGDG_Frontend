@@ -36,7 +36,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onEditAvatar }) => {
   const joinCode = sessionState?.joinCode || 'GLITCH';
   const hasPartner = !!sessionState?.guest;
   const partnerReady = sessionState?.guest?.isReady ?? false;
-  const canStart = isHost && (hasPartner || simulatedPartner);
+  const canStart = isHost && sessionState?.host.isReady && partnerReady;
 
   const handleCopyCode = async () => {
     try {
@@ -145,7 +145,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onEditAvatar }) => {
               </div>
               <div className="text-[10px] text-emerald-400 font-medium flex items-center justify-center gap-1 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span>Host Ready</span>
+                <span>{sessionState?.host.isReady ? 'Host Ready' : 'Host Customizing'}</span>
               </div>
             </div>
           </div>
@@ -168,7 +168,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onEditAvatar }) => {
                   </div>
                   <div className="text-[10px] text-emerald-400 font-medium flex items-center justify-center gap-1 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    <span>Partner Joined</span>
+                    <span>{partnerReady ? 'Partner Ready' : 'Partner Customizing'}</span>
                   </div>
                 </div>
               </>
@@ -207,7 +207,7 @@ export const LobbyScreen: React.FC<LobbyScreenProps> = ({ onEditAvatar }) => {
             className="w-full py-4 rounded-xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-base shadow-[0_4px_20px_rgba(244,63,94,0.4)] transition-all flex items-center justify-center gap-2 disabled:opacity-40 active:scale-[0.98]"
           >
             <Play className="w-5 h-5 fill-white" />
-            <span>{hasPartner ? 'Begin Date Call' : 'Start Date (Waiting for Partner)'}</span>
+            <span>{canStart ? 'Begin Date Call' : hasPartner ? 'Waiting for Partner Setup' : 'Start Date (Waiting for Partner)'}</span>
           </button>
         ) : (
           <div className="p-4 rounded-xl bg-[#1a1636] border border-[#2e2754] text-center">

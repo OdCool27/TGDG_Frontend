@@ -6,6 +6,7 @@ import {
   SessionResponse,
   HealthCheckResponse,
 } from '../types/game';
+import { apiOrigin } from './baseUrl';
 
 export interface GameApiClient {
   createSession(): Promise<CreateSessionResponse>;
@@ -30,10 +31,7 @@ export class HttpGameApiClient implements GameApiClient {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = (baseUrl || (import.meta.env.VITE_API_BASE_URL as string) || '').replace(
-      /\/$/,
-      ''
-    );
+    this.baseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? '';
   }
 
   private async request<T>(
@@ -43,7 +41,7 @@ export class HttpGameApiClient implements GameApiClient {
     token?: string
   ): Promise<T> {
     if (!this.baseUrl) throw new Error('The game server is not configured. Set VITE_API_BASE_URL and rebuild the frontend.');
-    const url = `${this.baseUrl}${endpoint}`;
+    const url = `${apiOrigin(this.baseUrl)}${endpoint}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
