@@ -24,4 +24,4 @@ Run `npm test` with the frontend and backend running locally on ports 3000 and 3
 
 To check a production build before deploying, run `npm run build`, set `E2E_USE_DIST=true`, and set `E2E_APP_ORIGIN` to an origin allowed by the backend. Playwright serves local `dist/` files only within its isolated browsers at that origin. API requests still reach the configured backend directly and enforce CORS; this does not publish any files. Ensure the build's `VITE_API_BASE_URL` matches `E2E_API_BASE_URL`.
 
-For the original `Cannot POST /3001/api/v1/sessions` deployment error, correct Netlify's `VITE_API_BASE_URL` as above and rebuild/redeploy. Editing a local env file alone cannot update an already deployed bundle.
+For the original `Cannot POST /3001/api/v1/sessions` deployment error, `netlify.toml` pins `VITE_API_BASE_URL` to the Railway origin without a path. This file-based value overrides a stale Netlify UI variable and prevents the origin validation from failing the build. Change `[build.environment]` when moving the backend, then rebuild/redeploy. Editing a local env file alone cannot update an already deployed bundle.
