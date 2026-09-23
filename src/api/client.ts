@@ -29,6 +29,7 @@ export interface GameApiClient {
 
 export class HttpGameApiClient implements GameApiClient {
   private baseUrl: string;
+  private readonly pendingJoins = new Map<string, string>();
 
   constructor(baseUrl?: string) {
     this.baseUrl = baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? '';
@@ -51,11 +52,12 @@ export class HttpGameApiClient implements GameApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    try {
     const response = await fetch(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
-      signal: AbortSignal.timeout(60000),
+      signal: AbortSignal.timeout(20000),
     });
 
     if (!response.ok) {
@@ -71,7 +73,17 @@ export class HttpGameApiClient implements GameApiClient {
       throw new ApiError(errorMessage, response.status);
     }
 
-    return response.json();
+    return await response.json();
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      if (error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name)) {
+        throw new Error('The date server took too long to respond. Please try again. If you were joining, use the same browser and room code to recover your seat.');
+      }
+      if (error instanceof TypeError) {
+        throw new Error('Could not reach the date server. Check your connection and try again.');
+      }
+      throw error;
+    }
   }
 
   async createSession(): Promise<CreateSessionResponse> {
@@ -79,9 +91,17 @@ export class HttpGameApiClient implements GameApiClient {
   }
 
   async joinSession(code: string): Promise<JoinSessionResponse> {
-    return this.request<JoinSessionResponse>('/api/v1/sessions/join', 'POST', {
-      joinCode: code.toUpperCase().trim(),
-    });
+    const joinCode = code.toUpperCase().trim();
+    const key = `date_glitch_pending_join_${apiOrigin(this.baseUrl)}_${joinCode}`;
+    // Keep the credential before sending: a lost response must not strand the guest seat.
+    let playerToken = this.pendingJoins.get(key) || localStorage.getItem(key);
+    if (!playerToken) {
+      playerToken = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      localStorage.setItem(key, playerToken);
+      this.pendingJoins.set(key, playerToken);
+    }
+    return this.request<JoinSessionResponse>('/api/v1/sessions/join', 'POST', { joinCode, playerToken });
   }
 
   async updateCharacter(
